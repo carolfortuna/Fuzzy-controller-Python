@@ -1,0 +1,77 @@
+!pip install scikit-fuzzy
+
+#Importando as bibliotecas
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+import matplotlib.pyplot as plt
+
+#Antecedentes
+pre = ctrl.Antecedent(np.arange(60, 221, 1), 'Pressao')
+pul = ctrl.Antecedent(np.arange(40, 151, 1), 'Pulsacao')
+
+#Consequente
+ane = ctrl.Consequent(np.arange(0, 5, 0.1), 'Anestesia')
+
+#Funções de pertinencia pressao
+pre['Baixa'] = fuzz.trapmf(pre.universe, [60, 60, 80, 90])
+pre['Muito Baixa'] = fuzz.trimf(pre.universe, [80, 90, 100])
+pre['Normal']= fuzz.trapmf(pre.universe, [90, 100, 140, 160])
+pre['Alta'] = fuzz.trapmf(pre.universe, [140, 160, 170,190])
+pre['Muito Alta'] = fuzz.trapmf(pre.universe, [170, 190, 220, 220])
+
+#Funções de pertinencia pulso
+pul['Muito Baixa'] = fuzz.trapmf(pul.universe, [40, 40, 50, 60])
+pul['Baixa'] = fuzz.trimf(pul.universe, [50, 60, 70])
+pul['Normal'] = fuzz.trapmf(pul.universe, [60, 70, 90, 100])
+pul['Alta'] = fuzz.trapmf(pul.universe, [90, 95, 110, 115])
+pul['Muito Alta'] = fuzz.trapmf(pul.universe, [110, 120, 150, 150])
+
+ #Funções de pertinencia anestesia
+ane['Muito Baixa'] = fuzz.trimf(ane.universe, [0, 0.1, 0.2])
+ane['Baixa'] = fuzz.trapmf(ane.universe, [0.4, 0.5, 0.8, 0.9])
+ane['Normal'] = fuzz.trapmf(ane.universe, [0.9, 1, 2.5, 3])
+ane['Alta'] = fuzz.trapmf(ane.universe, [2.8, 3, 3.6, 4])
+ane['Muito Alta'] = fuzz.trapmf(ane.universe, [3.9, 4, 4, 4])
+
+#grafico das funções
+pre.view()
+pul.view()
+ane.view()
+
+# Regras 
+r1 = ctrl.Rule(pul['Muito Baixa'] | pul['Baixa'], ane['Muito Baixa'])
+r2 = ctrl.Rule(pul['Muito Baixa'] & pul['Baixa'], ane['Baixa'])
+r3 = ctrl.Rule(pul['Muito Baixa'] | pul['Normal'], ane['Normal'])
+r4 = ctrl.Rule(pul['Muito Baixa'] & pre['Normal'], ane['Normal'])
+r5 = ctrl.Rule(pul['Alta'] | pre['Normal'], ane['Normal'])
+r6 = ctrl.Rule(pul['Alta'] & pre['Normal'], ane['Normal'])
+r7 = ctrl.Rule(pul['Alta'] | pre['Muito Alta'], ane['Alta'])
+r8 = ctrl.Rule(pul['Alta'] & pre['Muito Alta'], ane['Muito Alta'])
+r9 = ctrl.Rule(pul['Alta'] & pre['Normal'], ane['Normal'])
+r10 = ctrl.Rule(pul['Alta'] | pre['Normal'], ane['Normal'])
+r11 = ctrl.Rule(pul['Normal'] | pre['Normal'], ane['Normal'])
+
+
+
+# Regras 
+r20 = ctrl.Rule(pre['Muito Baixa'] | pre['Baixa'], pre['Muito Baixa'])
+r12= ctrl.Rule(pre['Muito Baixa'] & pre['Baixa'], ane['Baixa'])
+r13 = ctrl.Rule(pre['Muito Baixa'] | pre['Normal'], ane['Normal'])
+r14 = ctrl.Rule(pre['Muito Baixa'] & pre['Normal'], ane['Normal'])
+r15 = ctrl.Rule(pre['Alta'] | pre['Normal'], ane['Normal'])
+r16 = ctrl.Rule(pre['Alta'] & pre['Normal'], ane['Normal'])
+r17 = ctrl.Rule(pre['Alta'] | pre['Muito Alta'], ane['Alta'])
+r18 = ctrl.Rule(pre['Alta'] & pre['Muito Alta'], ane['Muito Alta'])
+r19 = ctrl.Rule(pre['Alta'] & pre['Normal'], ane['Normal'])
+
+#criação e simulação da controladora
+txane_ctrl = ctrl.ControlSystem([r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11])
+txane = ctrl.ControlSystemSimulation(dose_ctrl)
+
+txane.input['Pulsacao'] = 100
+txane.input['Pressao'] = 2
+
+txane.compute()
+print(txane.output['Anestesia'])
+
