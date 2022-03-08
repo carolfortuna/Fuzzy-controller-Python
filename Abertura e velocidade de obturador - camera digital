@@ -1,0 +1,92 @@
+!pip install scikit-fuzzy
+
+# Nova seção
+
+#Importando as bibliotecas
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+import matplotlib.pyplot as plt
+
+#Antecedentes
+luz = ctrl.Antecedent(np.arange(-2, 3, 1), 'Luz')
+mov = ctrl.Antecedent(np.arange(0, 11, 1), 'Movimento')
+
+#Consequentes
+ab = ctrl.Consequent(np.arange(1.4, 22.1, 0.1), 'Abertura')
+vel = ctrl.Consequent(np.arange(0.000125, 0.033334, 0.000001), 'Velocidade')
+
+#Funções de pertinencia luz 
+luz['Baixa'] = fuzz.trimf(luz.universe, [-2, -2, 0])
+luz['Moderada'] = fuzz.trimf(luz.universe, [-2, 0, 2])
+luz['Alta'] = fuzz.trimf(luz.universe, [0, 2, 2])
+luz.view()
+
+#Funções de pertinencia movimento
+mov['Estatico'] = fuzz.trimf(mov.universe, [0, 0, 5])
+mov['Movel'] = fuzz.trimf(mov.universe, [0, 5, 10])
+mov['Altamente Movel'] = fuzz.trimf(mov.universe, [5, 10, 10])
+mov.view()
+
+#Funções de pertinencia abertura em stops
+ab['Alta'] = fuzz.trimf(ab.universe, [5.6, 22, 22])
+ab['Moderada'] = fuzz.trimf(ab.universe, [1.4, 5.6, 22])
+ab['Baixa'] = fuzz.trimf(ab.universe, [1.4, 1.4, 5.6])
+
+ab.view()
+
+#Funções de pertinencia velocidade
+vel['Alta'] = fuzz.trimf(vel.universe, [0.000125, 0.000125, 0.002])
+vel['Moderada'] = fuzz.trimf(vel.universe, [0.000125, 0.002, 0.033333])
+vel['Baixa'] = fuzz.trimf(vel.universe, [0.002, 0.033333, 0.033333])
+vel.view()
+
+#Regras para o controle da Abertura
+r1 = ctrl.Rule(luz['Baixa'] & mov['Estatico'], ab['Alta'])
+r2 = ctrl.Rule(luz['Moderada'] & mov['Estatico'], ab['Moderada'])
+r3 = ctrl.Rule(luz['Alta'] & mov['Estatico'], ab['Baixa'])
+
+r4 = ctrl.Rule(luz['Baixa'] & mov['Movel'], ab['Alta'])
+r5 = ctrl.Rule(luz['Moderada'] & mov['Movel'], ab['Moderada'])
+r6 = ctrl.Rule(luz['Alta'] & mov['Movel'], ab['Baixa'])
+
+r7 = ctrl.Rule(luz['Alta'] & mov['Altamente Movel'], ab['Baixa'])
+r8 = ctrl.Rule(luz['Baixa'] & mov['Altamente Movel'], ab['Alta'])
+
+
+
+#Regras para o controle da Velocidade
+r9 = ctrl.Rule(luz['Baixa'] & mov['Estatico'], vel['Baixa'])
+r10 = ctrl.Rule(luz['Moderada'] & mov['Estatico'], vel['Moderada'])
+r11 = ctrl.Rule(luz['Alta'] & mov['Estatico'], vel['Alta'])
+
+r12 = ctrl.Rule(luz['Baixa'] & mov['Movel'], vel['Moderada'])
+r13 = ctrl.Rule(luz['Moderada'] & mov['Movel'], vel['Alta'])
+r14 = ctrl.Rule(luz['Alta'] & mov['Movel'], vel['Moderada'])
+
+r15 = ctrl.Rule(luz['Alta'] & mov['Altamente Movel'], vel['Alta'])
+r16 = ctrl.Rule(luz['Baixa'] & mov['Altamente Movel'], vel['Moderada'])
+
+
+
+
+
+camera_ctrl = ctrl.ControlSystem([r1, r2, r3, r4, r5, r6, r7, r8,
+r9,
+r10,
+r11,
+r12,
+r13,
+r14,
+r15,
+r16,])
+
+camera = ctrl.ControlSystemSimulation(camera_ctrl)
+
+camera.input['Luz'] = 2
+camera.input['Movimento'] = 2
+
+camera.compute()
+print(camera.output['Abertura'])
+
+print(camera.output['Velocidade'])
