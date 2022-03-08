@@ -1,0 +1,220 @@
+!pip install scikit-fuzzy
+
+#Importando as bibliotecas
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+import matplotlib.pyplot as plt
+
+
+#Antecedentes
+temp = ctrl.Antecedent(np.arange(0, 51, 1), 'Temperatura')
+lumi = ctrl.Antecedent(np.arange(0, 12001, 1), 'Intensidade Luminosa')
+umi = ctrl.Antecedent(np.arange(0, 101, 1), 'Percentual de Umidade')
+turno = ctrl.Antecedent(np.arange(0, 21, 1), 'Hora do Dia')
+
+
+#Funções de pertinencia temperatura
+temp['Muito Frio'] = fuzz.trapmf(temp.universe, [0, 0, 6, 10])
+temp['Normal'] = fuzz.trimf(temp.universe, [13, 20, 24])
+temp['Muito Quente'] = fuzz.trapmf(temp.universe, [25, 30, 50, 50])
+temp['Frio'] = fuzz.trimf(temp.universe, [5, 11, 20])
+temp['Quente'] = fuzz.trimf(temp.universe, [20, 25, 29])
+temp.view()
+
+
+
+#Funções de pertinencia intensidade luminosa
+lumi['Muito Pouca'] = fuzz.trimf(lumi.universe, [0, 2000, 3800])
+lumi['Pouca'] = fuzz.trimf(lumi.universe, [2800, 4000, 5750])
+lumi['Normal'] = fuzz.trimf(lumi.universe, [4800, 6000, 7900])
+lumi['Muita'] = fuzz.trapmf(lumi.universe, [6800, 8200, 12000, 12000])
+lumi.view()
+
+
+#Funções de pertinencia umidade
+umi['Pouca'] = fuzz.trapmf(umi.universe, [0, 0, 25, 50])
+umi['Muita'] = fuzz.trapmf(umi.universe, [50, 75, 100, 100])
+umi['Normal'] = fuzz.trimf(umi.universe, [25, 50, 75])
+umi.view()
+
+#Funções de pertinencia hora do dia
+turno['Manha'] = fuzz.trapmf(turno.universe, [0, 0, 3, 8])
+turno['Dia'] = fuzz.trimf(turno.universe, [6, 12, 17])
+turno['Noite'] = fuzz.trapmf(turno.universe, [15, 17, 20, 20])
+turno.view()
+
+#Consequentes
+res = ctrl.Consequent(np.arange(0, 6, 0.1), 'Resistencia')
+vent = ctrl.Consequent(np.arange(0, 6, 0.1), 'Ventilador')
+per = ctrl.Consequent(np.arange(0, 6, 0.1), 'Persiana')
+luz = ctrl.Consequent(np.arange(0, 6, 0.1), 'Luzes')
+umid = ctrl.Consequent(np.arange(0, 6, 0.1), 'Umidificador')
+
+#Funções de pertinencia resistencia
+res['OFF'] = fuzz.trimf(res.universe, [0, 0, 0.1])
+res['Media'] = fuzz.trimf(res.universe, [2.4, 2.5, 2.6])
+res['ON'] = fuzz.trimf(res.universe, [4.9, 5, 5])
+res.view()
+
+
+#Funções de pertinencia ventilador
+vent['OFF'] = fuzz.trimf(vent.universe, [0, 0, 0.1])
+vent['Medio'] = fuzz.trimf(vent.universe, [2.4, 2.5, 2.6])
+vent['ON'] = fuzz.trimf(vent.universe, [4.9, 5, 5])
+vent.view()
+
+#Funções de pertinencia luzes
+luz['OFF'] = fuzz.trimf(luz.universe, [0, 0, 0.1])
+luz['Media'] = fuzz.trimf(luz.universe, [2.4, 2.5, 2.6])
+luz['ON'] = fuzz.trimf(luz.universe, [4.9, 5, 5])
+luz.view()
+
+#Funções de pertinencia persiana
+per['Fechada'] = fuzz.trimf(per.universe, [0, 0, 0.1])
+per['Media'] = fuzz.trimf(per.universe, [2.4, 2.5, 2.6])
+per['Aberta'] = fuzz.trimf(per.universe, [4.9, 5, 5])
+per.view()
+
+#Funções de pertinencia umidificador
+umid['OFF'] = fuzz.trimf(umid.universe, [0, 0, 0.1])
+umid['ON'] = fuzz.trimf(umid.universe, [4.9, 5, 5])
+umid.view()
+
+#FAM para o controle da Temperatura Resistencia
+r1 = ctrl.Rule(turno['Manha'] & temp['Muito Frio'], res['ON'])
+r2 = ctrl.Rule(turno['Dia'] & temp['Muito Frio'], res['ON'])
+r3 = ctrl.Rule(turno['Noite'] & temp['Muito Frio'], res['ON'])
+
+r4 = ctrl.Rule(turno['Manha'] & temp['Frio'], res['OFF'])
+r5 = ctrl.Rule(turno['Dia'] & temp['Frio'], res['Media'])
+r6 = ctrl.Rule(turno['Noite'] & temp['Frio'], res['OFF'])
+
+r7 = ctrl.Rule(turno['Manha'] & temp['Normal'], res['OFF'])
+r8 = ctrl.Rule(turno['Dia'] & temp['Normal'], res['OFF'])
+r9 = ctrl.Rule(turno['Noite'] & temp['Normal'], res['OFF'])
+
+r10 = ctrl.Rule(turno['Manha'] & temp['Quente'], res['OFF'])
+r11 = ctrl.Rule(turno['Dia'] & temp['Quente'], res['OFF'])
+r12 = ctrl.Rule(turno['Noite'] & temp['Quente'], res['OFF'])
+
+r13 = ctrl.Rule(turno['Manha'] & temp['Muito Quente'], res['OFF'])
+r14 = ctrl.Rule(turno['Dia'] & temp['Muito Quente'], res['OFF'])
+r15 = ctrl.Rule(turno['Noite'] & temp['Muito Quente'], res['OFF'])
+
+
+
+
+#FAM para o controle da Temperatura Ventilador
+r16 = ctrl.Rule(turno['Manha'] & temp['Muito Frio'], vent['OFF'])
+r17= ctrl.Rule(turno['Dia'] & temp['Muito Frio'], vent['OFF'])
+r18= ctrl.Rule(turno['Noite'] & temp['Muito Frio'], vent['OFF'])
+
+r19 = ctrl.Rule(turno['Manha'] & temp['Frio'], vent['OFF'])
+r20= ctrl.Rule(turno['Dia'] & temp['Frio'], vent['OFF'])
+r21= ctrl.Rule(turno['Noite'] & temp['Frio'], vent['OFF'])
+
+r22 = ctrl.Rule(turno['Manha'] & temp['Normal'], vent['Medio'])
+r23= ctrl.Rule(turno['Dia'] & temp['Normal'], vent['Medio'])
+r24= ctrl.Rule(turno['Noite'] & temp['Normal'], vent['Medio'])
+
+r25 = ctrl.Rule(turno['Manha'] & temp['Quente'], vent['ON'])
+r26= ctrl.Rule(turno['Dia'] & temp['Quente'], vent['ON'])
+r27= ctrl.Rule(turno['Noite'] & temp['Quente'], vent['ON'])
+
+r28 = ctrl.Rule(turno['Manha'] & temp['Muito Quente'], vent['ON'])
+r29= ctrl.Rule(turno['Dia'] & temp['Muito Quente'], vent['ON'])
+r30= ctrl.Rule(turno['Noite'] & temp['Muito Quente'], vent['ON'])
+
+#FAM para o controle da Intensidade Luminosa persiana
+r31 = ctrl.Rule(turno['Manha'] & lumi['Muito Pouca'], per['Fechada'])
+r32= ctrl.Rule(turno['Dia'] & lumi['Muito Pouca'], per['Aberta'])
+r33= ctrl.Rule(turno['Noite'] & lumi['Muito Pouca'], per['Fechada'])
+
+r34 = ctrl.Rule(turno['Manha'] & lumi['Pouca'], per['Fechada'])
+r35= ctrl.Rule(turno['Dia'] & lumi['Pouca'], per['Aberta'])
+r36= ctrl.Rule(turno['Noite'] & lumi['Pouca'], per['Fechada'])
+
+r37 = ctrl.Rule(turno['Manha'] & lumi['Normal'], per['Fechada'])
+r38= ctrl.Rule(turno['Dia'] & lumi['Normal'], per['Media'])
+r39= ctrl.Rule(turno['Noite'] & lumi['Normal'], per['Fechada'])
+
+r40 = ctrl.Rule(turno['Manha'] & lumi['Muita'], per['Fechada'])
+r41= ctrl.Rule(turno['Dia'] & lumi['Muita'], per['Fechada'])
+r42= ctrl.Rule(turno['Noite'] & lumi['Muita'], per['Fechada'])
+
+
+#FAM para o controle da Umidade ventilador
+r43 = ctrl.Rule(umi['Pouca'], vent['OFF'])
+r44 = ctrl.Rule(umi['Normal'], vent['OFF'])
+r45 = ctrl.Rule(umi['Muita'], vent['ON'])
+
+
+#FAM para o controle da Umidade umidificador
+r46 = ctrl.Rule(umi['Pouca'], umid['ON'])
+r47 = ctrl.Rule(umi['Normal'], umid['OFF'])
+r48 = ctrl.Rule(umi['Muita'], umid['OFF'])
+
+#criação e simulação da controladora
+tensao_ctrl = ctrl.ControlSystem([r1,
+r2,
+r3,
+r4,
+r5,
+r6,
+r7,
+r8,
+r9,
+r10,
+r11,
+r12,
+r13,
+r14,
+r15,
+r16,
+r17,
+r18,
+r19,
+r20,
+r21,
+r22,
+r23,
+r24,
+r25,
+r26,
+r27,
+r28,
+r29,
+r30,
+r31,
+r32,
+r33,
+r34,
+r35,
+r36,
+r37,
+r38,
+r39,
+r40,
+r41,
+r42,
+r43,
+r44,
+r45,
+r46,
+r47, r48
+])
+tensao = ctrl.ControlSystemSimulation(tensao_ctrl)
+
+
+
+
+tensao.input['Temperatura'] = 10
+tensao.input['Hora do Dia'] = 12
+tensao.input['Percentual de Umidade'] = 50
+tensao.input['Intensidade Luminosa'] = 10000
+tensao.compute()
+print(tensao.output['Ventilador'])
+print(tensao.output['Persiana'])
+print(tensao.output['Umidificador'])
+print(tensao.output['Resistencia'])
